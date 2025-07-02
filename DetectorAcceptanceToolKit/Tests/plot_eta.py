@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 acceptances_df = pd.read_csv('eta_acceptances.txt', delim_whitespace=True)
-st = 'MB4'
+st = 'MB1'
 eta1_st = 'eta1_' + st
 eta2_st = 'eta2_' + st
 

@@ -1,22 +1,32 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-from src.chambers_phi_acc import ch_phi_acc
-from src.chambers_eta_acc import ch_eta_acc
+from src.chambers_phi_acc import Ch_phi_acc
+from src.chambers_eta_acc import Ch_eta_acc
+from src.chambers_phi_eta_acc import Ch_phi_eta_acc
 
-cpa = ch_phi_acc(False)
-cea = ch_eta_acc(True)
+# cpa = Ch_phi_acc(False)
+# cea = Ch_eta_acc(True)
 
+cpea = Ch_phi_eta_acc(True)
+
+# cpea.save_eta_acceptances_to_txt()
+# cpea.save_phi_acceptances_to_txt()
+
+cpea.plot2D_map(st=1)
+cpea.plot2D_map(st=2)
+cpea.plot2D_map(st=3)
+cpea.plot2D_map(st=4)
 # ranges, acceptances = cpa.compute_phi_acceptance(acc=True, rang=rang)
 
-cea.compute_eta_acceptance()
+# cea.compute_eta_acceptance()
 
-# cpa.compute_phi_acceptance(acc=True, rang=False, kind=0)
+# cpa.compute_phi_acceptance(acc=True, rang=False)
+
+# cea.save_acceptances_to_txt()
+# cpa.save_acceptances_to_txt()
 
 # cpa.plot_ch_phi_acc(acc=True, rang=False, kind=1, outfile="chambers_acceptance_type0")
-
-cea.save_acceptances()
-# cpa.save_acceptances()
 
 # ranges = cpa.ranges
 # acceptances = cpa.acceptances

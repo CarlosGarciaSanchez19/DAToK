@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 acceptances_df = pd.read_csv('phi_acceptances.txt', delim_whitespace=True)
-st = 'MB4'
+st = 'MB1'
 phi1_st = 'phi1_' + st
 phi2_st = 'phi2_' + st
 
@@ -17,5 +17,6 @@ for i in range(sum(acceptances_df[phi1_st].notna())):
     if i == 6: continue
     ax.fill_between([phi1[i], phi2[i]], y1=0.0, y2=1.0, color="limegreen")
 
+ax.grid()
 fig.savefig("Test_kind_0.png")
 fig.savefig("Test_kind_0.pdf")

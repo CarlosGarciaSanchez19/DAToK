@@ -4,7 +4,7 @@ import time
 import matplotlib.pyplot as plt
 from itertools import zip_longest
 
-class ch_eta_acc:
+class Ch_eta_acc:
 
     def __init__(self, verbosity=False):
         self.wires_df = pd.read_csv('wires_LUT.txt', delim_whitespace=True)
@@ -17,25 +17,22 @@ class ch_eta_acc:
         self.min_st = self.wires_df['station'].min()
         self.max_st = self.wires_df['station'].max()
 
-        self.acceptances = None
-
         self.verbosity = verbosity
 
-    def get_layer_eta1_eta2(self, layer_df):
+        self.acceptances = self.compute_eta_acceptance()
+
+
+    def _get_layer_eta1_eta2(self, layer_df):
         layer_fst_wire_df = layer_df[layer_df['wire'] == layer_df['wire'].min()]
         global_z = layer_fst_wire_df['global_z'].values[0]
-        global_r = (layer_fst_wire_df['global_y'].values[0]**2 + layer_fst_wire_df['global_x'].values[0]**2)**0.5
+        gloabl_x = layer_fst_wire_df['global_x'].values[0]
+        global_y = layer_fst_wire_df['global_y'].values[0]
+        global_r = (gloabl_x**2 + global_y**2)**0.5
         shift_z = layer_fst_wire_df['length'].values[0] / 2
         shifted_z_eta1 = global_z - shift_z
-        shifted_r_eta1 = (global_r**2 + shifted_z_eta1**2)**0.5
         shifted_z_eta2 = global_z + shift_z
-        shifted_r_eta2 = (global_r**2 + shifted_z_eta2**2)**0.5
 
-        # print("Z_R_ETA1_ETA2:")
-        # print(shifted_z_eta1, shifted_r_eta1)
-        # print(shifted_z_eta2, shifted_r_eta2)
-        eta1, eta2 = -1 * np.log(np.tan(np.arctan2(shifted_r_eta1, shifted_z_eta1) / 2)), -1 * np.log(np.tan(np.arctan2(shifted_r_eta2, shifted_z_eta2) / 2))
-        # if global_z < 0: eta1, eta2 = eta2, eta1
+        eta1, eta2 = -1 * np.log(np.tan(np.arctan2(global_r, shifted_z_eta1) / 2)), -1 * np.log(np.tan(np.arctan2(global_r, shifted_z_eta2) / 2))
         return eta1, eta2
 
     def _chambers_eta_acceptance(self, wh, sec, st, sl=1):
@@ -50,11 +47,11 @@ class ch_eta_acc:
         eta2 = 5
         for i in range(1, num_layers + 1):
             i_layer_df = Slayer_df[Slayer_df['layer'] == i]
-            i_eta1_layer = self.get_layer_eta1_eta2(i_layer_df)[0]
+            i_eta1_layer = self._get_layer_eta1_eta2(i_layer_df)[0]
 
             for j in range(1, num_layers + 1):
                 j_layer_df = Slayer_df[Slayer_df['layer'] == j]
-                j_eta2_layer = self.get_layer_eta1_eta2(j_layer_df)[1]
+                j_eta2_layer = self._get_layer_eta1_eta2(j_layer_df)[1]
                 diff = abs(j_eta2_layer - i_eta1_layer)
                 if diff < min_diff:
                     min_diff = diff
@@ -90,23 +87,22 @@ class ch_eta_acc:
         # return eta1, eta2
 
     def compute_eta_acceptance(self):
-        acceptances = np.full((self.max_wh * 2 + 1, self.max_st, 2), None, dtype=object)
+        acceptances = np.full((self.max_wh * 2 + 1, self.max_sec, self.max_st, 2), None, dtype=object)
 
         for wh in range(self.min_wh, self.max_wh + 1):
-            sec = 14
-            for st in range(self.min_st, self.max_st + 1):
-                if (self.verbosity):
-                    print(f"Computing eta acceptance for Wheel: {wh}, Sector: {sec}, Station: {st}")
-                eta1_st_acc, eta2_st_acc =  self._chambers_eta_acceptance(wh, sec, st)
-                acceptances[wh + 2, st - 1] = [eta1_st_acc, eta2_st_acc]
-        self.acceptances = acceptances
+            for sec in range(self.min_sec, self.max_sec + 1):
+                for st in range(self.min_st, self.max_st + 1):
+                    if (self.verbosity):
+                        print(f"Computing eta acceptance for Wheel: {wh}, Sector: {sec}, Station: {st}")
+                    eta1_st_acc, eta2_st_acc =  self._chambers_eta_acceptance(wh, sec, st)
+                    acceptances[wh + 2, sec - 1, st - 1] = [eta1_st_acc, eta2_st_acc]
         return acceptances
     
-    def save_acceptances(self):
+    def save_acceptances_to_txt(self, sec=1):
+        # This function creates a .txt file in csv format (delimiters are whitespaces) given a sector where eta acceptances for every station and wheel are saved.
         if not np.all(self.acceptances == None):
             print("Saving acceptances to eta_acceptances.txt")
-            time.sleep(0.5)
-            eta_MB = self.acceptances
+            eta_MB = self.acceptances[:, sec - 1, :, :]
             eta1_MB1 = eta_MB[:, 0, 0]
             eta2_MB1 = eta_MB[:, 0, 1]
             eta1_MB2 = eta_MB[:, 1, 0]
@@ -117,3 +113,5 @@ class ch_eta_acc:
             eta2_MB4 = eta_MB[:, 3, 1]
             acceptances_df = pd.DataFrame(list(zip_longest(eta1_MB1, eta1_MB2, eta1_MB3, eta1_MB4, eta2_MB1, eta2_MB2, eta2_MB3, eta2_MB4, fillvalue=np.nan)), columns=['eta1_MB1', 'eta1_MB2', 'eta1_MB3', 'eta1_MB4', 'eta2_MB1', 'eta2_MB2', 'eta2_MB3', 'eta2_MB4'])
             acceptances_df.to_csv('eta_acceptances.txt', sep=' ', index=False, na_rep='NaN')
+            return 1
+        return -1
