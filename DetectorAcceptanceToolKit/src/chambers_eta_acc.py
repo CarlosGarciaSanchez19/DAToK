@@ -21,18 +21,28 @@ class Ch_eta_acc:
 
         self.acceptances = self.compute_eta_acceptance()
 
+    def _get_r_and_z(self, wire_df, eta):
+        global_z = wire_df['global_z'].values[0]
+        global_x = wire_df['global_x'].values[0]
+        global_y = wire_df['global_y'].values[0]
+        gloabl_r = (global_x**2 + global_y**2)**0.5
+        shift_z = wire_df['length'].values[0] / 2
+        if eta == 1:
+            global_z_shifted = global_z - shift_z
+        elif eta == 2:
+            global_z_shifted = global_z + shift_z
+        else:
+            raise ValueError("eta must be either 1 or 2.")
+        return gloabl_r, global_z_shifted
+
 
     def _get_layer_eta1_eta2(self, layer_df):
-        layer_fst_wire_df = layer_df[layer_df['wire'] == layer_df['wire'].min()]
-        global_z = layer_fst_wire_df['global_z'].values[0]
-        gloabl_x = layer_fst_wire_df['global_x'].values[0]
-        global_y = layer_fst_wire_df['global_y'].values[0]
-        global_r = (gloabl_x**2 + global_y**2)**0.5
-        shift_z = layer_fst_wire_df['length'].values[0] / 2
-        shifted_z_eta1 = global_z - shift_z
-        shifted_z_eta2 = global_z + shift_z
+        layer_eta1_wire_df = layer_df[layer_df['wire'] == round(layer_df['wire'].mean())]
+        layer_eta2_wire_df = layer_df[layer_df['wire'] == round(layer_df['wire'].mean())]
+        global_r_eta1, shifted_z_eta1 = self._get_r_and_z(layer_eta1_wire_df, 1)
+        global_r_eta2, shifted_z_eta2 = self._get_r_and_z(layer_eta2_wire_df, 2)
 
-        eta1, eta2 = -1 * np.log(np.tan(np.arctan2(global_r, shifted_z_eta1) / 2)), -1 * np.log(np.tan(np.arctan2(global_r, shifted_z_eta2) / 2))
+        eta1, eta2 = -1 * np.log(np.tan(np.arctan2(global_r_eta1, shifted_z_eta1) / 2)), -1 * np.log(np.tan(np.arctan2(global_r_eta2, shifted_z_eta2) / 2))
         return eta1, eta2
 
     def _chambers_eta_acceptance(self, wh, sec, st, sl=1):

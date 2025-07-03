@@ -7,6 +7,8 @@ from src.chambers_phi_acc import Ch_phi_acc
 
 class Ch_phi_eta_acc:
     def __init__(self, verbosity=False):
+        self.verbosity = verbosity
+
         self.cea = Ch_eta_acc(verbosity=verbosity)
         self.cpa = Ch_phi_acc(verbosity=verbosity)
 
@@ -34,24 +36,31 @@ class Ch_phi_eta_acc:
         fig, ax = plt.subplots(1, 1, figsize=(10, 10))
         for wh in range(self.min_wh, self.max_wh + 1):
             for sec in range(self.min_sec, self.max_sec + 1):
-                y1 = self.eta_acceptances[wh + 2, sec - 1, st - 1, 0]
-                y2 = self.eta_acceptances[wh + 2, sec - 1, st - 1, 1]
-                x1 = self.phi_acceptances[wh + 2, sec - 1, st - 1, 0]
-                x2 = self.phi_acceptances[wh + 2, sec - 1, st - 1, 1]
+                eta1 = self.eta_acceptances[wh + 2, sec - 1, st - 1, 0]
+                eta2 = self.eta_acceptances[wh + 2, sec - 1, st - 1, 1]
+                phi1 = self.phi_acceptances[wh + 2, sec - 1, st - 1, 0]
+                phi2 = self.phi_acceptances[wh + 2, sec - 1, st - 1, 1]
+                if self.verbosity and st == 4:
+                    print(f"Plotting acceptance for wheel {wh}, sector {sec} and station MB{st}:")
+                    print(f"Eta range:")
+                    print(eta1, eta2)
+                    print(f"Phi range:")
+                    print(phi1, phi2)
+                if eta1 == None or eta2 == None or phi1 == None or phi2 == None: continue
                 
-                if y1 == None or y2 == None or x1 == None or x2 == None: continue
-                
-                if y1 < -1.2:
-                    y1 = -1.2
-                if y2 > 1.2:
-                    y2 = 1.2
+                if eta1 < -1.2:
+                    eta1 = -1.2
+                if eta2 > 1.2:
+                    eta2 = 1.2
                 if sec == 7:
-                    ax.fill_between([x1, 3.2], y1=y1, y2=y2, color="limegreen")
-                    ax.fill_between([-3.2, x2], y1=y1, y2=y2, color="limegreen")
+                    ax.fill_between([phi1, 3.2], y1=eta1, y2=eta2, color="limegreen")
+                    ax.fill_between([-3.2, phi2], y1=eta1, y2=eta2, color="limegreen")
                 else:
-                    ax.fill_between([x1, x2], y1=y1, y2=y2, color="limegreen")
+                    ax.fill_between([phi1, phi2], y1=eta1, y2=eta2, color="limegreen")
         ax.set_xlim(-3.2, 3.2)
         ax.set_ylim(-1.2, 1.2)
-        ax.grid()
+        ax.grid(True, which='major', linestyle=':', linewidth=0.4, color='k')
+        ax.minorticks_on()
+        ax.grid(True, which='minor', linestyle=':', linewidth=0.4, color='k')
         fig.savefig("eta_phi_map_MB" + str(st) + ".png")
         fig.savefig("eta_phi_map_MB" + str(st) + ".pdf")
