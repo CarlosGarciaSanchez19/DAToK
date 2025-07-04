@@ -7,7 +7,7 @@ from itertools import zip_longest
 class Ch_eta_acc:
 
     def __init__(self, verbosity=False):
-        self.wires_df = pd.read_csv('wires_LUT.txt', delim_whitespace=True)
+        self.wires_df = pd.read_csv('files/data/wires_LUT.txt', delim_whitespace=True)
         self.min_wh = self.wires_df['wheel'].min()
         self.max_wh = self.wires_df['wheel'].max()
 
@@ -19,7 +19,7 @@ class Ch_eta_acc:
 
         self.verbosity = verbosity
 
-        self.acceptances = self.compute_eta_acceptance()
+        self.acceptances = None
 
     def _get_r_and_z(self, wire_df, eta):
         global_z = wire_df['global_z'].values[0]
@@ -77,7 +77,7 @@ class Ch_eta_acc:
             return None, None
         num_layers = int(Slayer_df['layer'].max())
         min_diff = 1000
-        layer = 3
+        layer = 2
         layer_df = Slayer_df[Slayer_df['layer'] == layer]
         eta1 = self._get_layer_eta1_eta2(layer_df)[0]
         eta2 = self._get_layer_eta1_eta2(layer_df)[1]
@@ -115,14 +115,15 @@ class Ch_eta_acc:
                 for st in range(self.min_st, self.max_st + 1):
                     if (self.verbosity):
                         print(f"Computing eta acceptance for Wheel: {wh}, Sector: {sec}, Station: {st}")
-                    eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_1(wh, sec, st)
+                    eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_0(wh, sec, st)
                     acceptances[wh + 2, sec - 1, st - 1] = [eta1_st_acc, eta2_st_acc]
+        self.acceptances = acceptances
         return acceptances
     
     def save_acceptances_to_txt(self, sec=1):
         # This function creates a .txt file in csv format (delimiters are whitespaces) given a sector where eta acceptances for every station and wheel are saved.
         if not np.all(self.acceptances == None):
-            print("Saving acceptances to eta_acceptances.txt")
+            print("Saving acceptances to files/output/eta_acceptances.txt")
             eta_MB = self.acceptances[:, sec - 1, :, :]
             eta1_MB1 = eta_MB[:, 0, 0]
             eta2_MB1 = eta_MB[:, 0, 1]
@@ -133,6 +134,10 @@ class Ch_eta_acc:
             eta1_MB4 = eta_MB[:, 3, 0]
             eta2_MB4 = eta_MB[:, 3, 1]
             acceptances_df = pd.DataFrame(list(zip_longest(eta1_MB1, eta1_MB2, eta1_MB3, eta1_MB4, eta2_MB1, eta2_MB2, eta2_MB3, eta2_MB4, fillvalue=np.nan)), columns=['eta1_MB1', 'eta1_MB2', 'eta1_MB3', 'eta1_MB4', 'eta2_MB1', 'eta2_MB2', 'eta2_MB3', 'eta2_MB4'])
-            acceptances_df.to_csv('eta_acceptances.txt', sep=' ', index=False, na_rep='NaN')
+            acceptances_df.to_csv('files/output/eta_acceptances.txt', sep=' ', index=False, na_rep='NaN')
             return 1
         return -1
+    
+    def save_acceptances_as_np_obj(self):
+        print("Saving acceptances to files/output/eta_acceptances.npy")
+        np.save("files/output/eta_acceptances.npy", self.acceptances)

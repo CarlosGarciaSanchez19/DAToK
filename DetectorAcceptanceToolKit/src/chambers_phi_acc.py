@@ -6,8 +6,8 @@ from itertools import zip_longest
 
 class Ch_phi_acc:
 
-    def __init__(self, verbosity=False, acc=True, rang=False):
-        self.wires_df = pd.read_csv('wires_LUT.txt', delim_whitespace=True)
+    def __init__(self, verbosity=False):
+        self.wires_df = pd.read_csv('files/data/wires_LUT.txt', delim_whitespace=True)
         self.min_wh = self.wires_df['wheel'].min()
         self.max_wh = self.wires_df['wheel'].max()
 
@@ -19,9 +19,8 @@ class Ch_phi_acc:
 
         self.verbosity = verbosity
 
-        acceptances, ranges = self.compute_phi_acceptance(acc=acc, rang=rang)
-        self.acceptances = acceptances
-        self.ranges = ranges
+        self.acceptances = None
+        self.ranges = None
 
     def _chamber_phi_range(self, wh, sec, st, sl=1):
         Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
@@ -112,12 +111,16 @@ class Ch_phi_acc:
                     if rang:
                         phi1_st_rang, phi2_st_rang =  self._chamber_phi_range(wh, sec, st)
                         ranges[wh + 2, sec - 1, st - 1] = [phi1_st_rang, phi2_st_rang]
+        if acc:
+            self.acceptances = acceptances
+        if rang:
+            self.ranges = ranges
         return acceptances, ranges
 
     def save_acceptances_to_txt(self, wh=0):
         # This function creates a .txt file in csv format (delimiters are whitespaces) given a wheel where phi acceptances for every station and sector are saved.
         if not np.all(self.acceptances == None):
-            print("Saving acceptances to phi_acceptances.txt")
+            print("Saving acceptances to files/output/phi_acceptances.txt")
             phi_MB = self.acceptances[wh + 2, :, :, :]
             phi1_MB1 = phi_MB[:, 0, 0]
             phi2_MB1 = phi_MB[:, 0, 1]
@@ -128,9 +131,9 @@ class Ch_phi_acc:
             phi1_MB4 = phi_MB[:, 3, 0]
             phi2_MB4 = phi_MB[:, 3, 1]
             acceptances_df = pd.DataFrame(list(zip_longest(phi1_MB1, phi1_MB2, phi1_MB3, phi1_MB4, phi2_MB1, phi2_MB2, phi2_MB3, phi2_MB4, fillvalue=np.nan)), columns=['phi1_MB1', 'phi1_MB2', 'phi1_MB3', 'phi1_MB4', 'phi2_MB1', 'phi2_MB2', 'phi2_MB3', 'phi2_MB4'])
-            acceptances_df.to_csv('phi_acceptances.txt', sep=' ', index=False, na_rep='NaN')
+            acceptances_df.to_csv('files/output/phi_acceptances.txt', sep=' ', index=False, na_rep='NaN')
         if not np.all(self.ranges == None):
-            print("Saving maximum ranges to phi_max_ranges.txt")
+            print("Saving maximum ranges to files/output/phi_max_ranges.txt")
             phi_MB = self.ranges[wh, :, :, :]
             phi1_MB1 = phi_MB[:, 0, 0]
             phi2_MB1 = phi_MB[:, 0, 1]
@@ -141,11 +144,15 @@ class Ch_phi_acc:
             phi1_MB4 = phi_MB[:, 3, 0]
             phi2_MB4 = phi_MB[:, 3, 1]
             acceptances_df = pd.DataFrame(list(zip_longest(phi1_MB1, phi1_MB2, phi1_MB3, phi1_MB4, phi2_MB1, phi2_MB2, phi2_MB3, phi2_MB4, fillvalue=np.nan)), columns=['phi1_MB1', 'phi1_MB2', 'phi1_MB3', 'phi1_MB4', 'phi2_MB1', 'phi2_MB2', 'phi2_MB3', 'phi2_MB4'])
-            acceptances_df.to_csv('phi_acceptances.txt', sep=' ', index=False, na_rep='NaN')
+            acceptances_df.to_csv('files/output/phi_max_ranges.txt', sep=' ', index=False, na_rep='NaN')
         if np.all(self.ranges == None) and np.all(self.acceptances == None):
             return -1
         else:
             return 1
+    
+    def save_acceptances_as_np_obj(self):
+        print("Saving acceptances to files/output/phi_acceptances.npy")
+        np.save("files/output/phi_acceptances.npy", self.acceptances)
 
     # def plot_ch_phi_acc(self, wh=0, acc=True, rang=False, outfile=''):
 

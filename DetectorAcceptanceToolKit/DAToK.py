@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import argparse
 from src.chambers_phi_acc import Ch_phi_acc
 from src.chambers_eta_acc import Ch_eta_acc
 from src.chambers_phi_eta_acc import Ch_phi_eta_acc
@@ -8,15 +9,26 @@ from src.chambers_phi_eta_acc import Ch_phi_eta_acc
 # cpa = Ch_phi_acc(False)
 # cea = Ch_eta_acc(True)
 
-cpea = Ch_phi_eta_acc(True)
+parser = argparse.ArgumentParser(description="Detector Acceptance Tool Kit")
+parser.add_argument("-v", "--verbose", action="count", default=0,
+                    help="Sets the verbosity. Without it only saving messages are shown. If included, extra information is shown.")
+parser.add_argument("-p", "--plot", action="store_true",
+                    help="If included, maps are created. If not, acceptances are computed and saved as .npy files.")
+
+args = parser.parse_args()
+
+if args.plot:
+    cpea = Ch_phi_eta_acc(args.verbose, eta_acc_file="eta_acceptances.npy", phi_acc_file="phi_acceptances.npy")
+    for st in range(1, 5):
+        cpea.plot2D_map(st=st)
+else:
+    cpea = Ch_phi_eta_acc(args.verbose)
+    cpea.save_eta_acceptances_as_np_obj()
+    cpea.save_phi_acceptances_as_np_obj()
 
 # cpea.save_eta_acceptances_to_txt()
 # cpea.save_phi_acceptances_to_txt()
 
-cpea.plot2D_map(st=1)
-cpea.plot2D_map(st=2)
-cpea.plot2D_map(st=3)
-cpea.plot2D_map(st=4)
 # ranges, acceptances = cpa.compute_phi_acceptance(acc=True, rang=rang)
 
 # cea.compute_eta_acceptance()

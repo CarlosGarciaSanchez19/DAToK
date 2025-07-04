@@ -1,1 +1,1 @@
-# DAToK
+# DAToK (Detector Acceptance Tool Kit)
