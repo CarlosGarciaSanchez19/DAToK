@@ -46,21 +46,21 @@ class Ch_eta_acc:
         return eta1, eta2
 
     def _chamber_eta_acceptance_0(self, wh, sec, st, sl=1):
-        Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
-        if Slayer_df.empty:
+        SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
+        if SuperLayer_df.empty:
             if (self.verbosity):
                 print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
             return None, None
-        num_layers = int(Slayer_df['layer'].max())
+        num_layers = int(SuperLayer_df['layer'].max())
         min_diff = 1000
         eta1 = -5
         eta2 = 5
         for i in range(1, num_layers + 1):
-            i_layer_df = Slayer_df[Slayer_df['layer'] == i]
+            i_layer_df = SuperLayer_df[SuperLayer_df['layer'] == i]
             i_eta1_layer = self._get_layer_eta1_eta2(i_layer_df)[0]
 
             for j in range(1, num_layers + 1):
-                j_layer_df = Slayer_df[Slayer_df['layer'] == j]
+                j_layer_df = SuperLayer_df[SuperLayer_df['layer'] == j]
                 j_eta2_layer = self._get_layer_eta1_eta2(j_layer_df)[1]
                 diff = abs(j_eta2_layer - i_eta1_layer)
                 if diff < min_diff:
@@ -70,35 +70,34 @@ class Ch_eta_acc:
         return eta1, eta2
 
     def _chamber_eta_acceptance_1(self, wh, sec, st, sl=1):
-        Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
-        if Slayer_df.empty:
+        SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
+        if SuperLayer_df.empty:
             if (self.verbosity):
                 print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
             return None, None
-        num_layers = int(Slayer_df['layer'].max())
+        num_layers = int(SuperLayer_df['layer'].max())
         min_diff = 1000
         layer = 2
-        layer_df = Slayer_df[Slayer_df['layer'] == layer]
-        eta1 = self._get_layer_eta1_eta2(layer_df)[0]
-        eta2 = self._get_layer_eta1_eta2(layer_df)[1]
+        layer_df = SuperLayer_df[SuperLayer_df['layer'] == layer]
+        eta1, eta2 = self._get_layer_eta1_eta2(layer_df)
         return eta1, eta2
     
-    def _chamber_eta_acceptance_SL2(self, wh, sec, st, sl=2):
-        Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
-        if Slayer_df.empty:
+    def _chamber_eta_acceptance_SL2_0(self, wh, sec, st):
+        SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == 2)]
+        if SuperLayer_df.empty:
             if (self.verbosity):
                 print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
             return None, None
 
-        num_layers = int(Slayer_df['layer'].max())
+        num_layers = int(SuperLayer_df['layer'].max())
         min_diff = 1000
         eta1 = -5
         eta2 = 5
         for i in range(1, num_layers + 1):
-            i_layer_df = Slayer_df[Slayer_df['layer'] == i]
+            i_layer_df = SuperLayer_df[SuperLayer_df['layer'] == i]
             min_eta_layer = i_layer_df['eta'].min()
             for j in range(1, num_layers + 1):
-                j_layer_df = Slayer_df[Slayer_df['layer'] == j]
+                j_layer_df = SuperLayer_df[SuperLayer_df['layer'] == j]
                 max_eta_layer = j_layer_df['eta'].max()
                 diff = abs(max_eta_layer - min_eta_layer)
                 if diff < min_diff:
@@ -106,6 +105,19 @@ class Ch_eta_acc:
                     eta1 = min_eta_layer
                     eta2 = max_eta_layer
         return eta1, eta2
+    
+    def _chamber_eta_acceptance_SL2_1(self, wh, sec, st):
+        SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == 2)]
+        if SuperLayer_df.empty:
+            if (self.verbosity):
+                print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: 2")
+            return None, None
+
+        i = 1
+        j = 1
+        i_layer_df = SuperLayer_df[SuperLayer_df['layer'] == i]
+        j_layer_df = SuperLayer_df[SuperLayer_df['layer'] == j]
+        return i_layer_df['eta'].min(), j_layer_df['eta'].max()
 
     def compute_eta_acceptance(self):
         acceptances = np.full((self.max_wh * 2 + 1, self.max_sec, self.max_st, 2), None, dtype=object)
@@ -115,7 +127,7 @@ class Ch_eta_acc:
                 for st in range(self.min_st, self.max_st + 1):
                     if (self.verbosity):
                         print(f"Computing eta acceptance for Wheel: {wh}, Sector: {sec}, Station: {st}")
-                    eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_0(wh, sec, st)
+                    eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_1(wh, sec, st)
                     acceptances[wh + 2, sec - 1, st - 1] = [eta1_st_acc, eta2_st_acc]
         self.acceptances = acceptances
         return acceptances

@@ -19,7 +19,7 @@ args = parser.parse_args()
 
 if args.plot:
     cpea = Ch_phi_eta_acc(args.verbose, eta_acc_file="eta_acceptances.npy", phi_acc_file="phi_acceptances.npy")
-    for st in range(1, 5):
+    for st in range(cpea.min_st, cpea.max_st + 1):
         cpea.plot2D_map(st=st)
 else:
     cpea = Ch_phi_eta_acc(args.verbose)

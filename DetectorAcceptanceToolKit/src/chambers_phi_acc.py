@@ -23,41 +23,41 @@ class Ch_phi_acc:
         self.ranges = None
 
     def _chamber_phi_range(self, wh, sec, st, sl=1):
-        Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
-        if Slayer_df.empty:
+        SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
+        if SuperLayer_df.empty:
             if (self.verbosity):
                 print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
             return None, None
 
-        num_layers = int(Slayer_df['layer'].max())
-        pos_phi = Slayer_df[Slayer_df['phi'] > 0]['phi']
-        neg_phi = Slayer_df[Slayer_df['phi'] < 0]['phi']
+        num_layers = int(SuperLayer_df['layer'].max())
+        pos_phi = SuperLayer_df[SuperLayer_df['phi'] > 0]['phi']
+        neg_phi = SuperLayer_df[SuperLayer_df['phi'] < 0]['phi']
         if sec == 7:
             phi1, phi2 = pos_phi.min(), neg_phi.max()
         else:
-            phi1, phi2 = Slayer_df['phi'].min(), Slayer_df['phi'].max()
+            phi1, phi2 = SuperLayer_df['phi'].min(), SuperLayer_df['phi'].max()
         return phi1, phi2
     
     def _chamber_phi_acceptance_0(self, wh, sec, st, sl=1):
-        Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
-        if Slayer_df.empty:
+        SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
+        if SuperLayer_df.empty:
             if (self.verbosity):
                 print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
             return None, None
 
-        num_layers = int(Slayer_df['layer'].max())
+        num_layers = int(SuperLayer_df['layer'].max())
         min_diff = 1000
         phi1 = -5
         phi2 = 5
         for i in range(1, num_layers + 1):
-            i_layer_df = Slayer_df[Slayer_df['layer'] == i]
+            i_layer_df = SuperLayer_df[SuperLayer_df['layer'] == i]
             if sec == 7:
                 min_phi_layer = i_layer_df[i_layer_df['phi'] > 0]['phi'].min()
             else:
                 min_phi_layer = i_layer_df['phi'].min()
 
             for j in range(1, num_layers + 1):
-                j_layer_df = Slayer_df[Slayer_df['layer'] == j]
+                j_layer_df = SuperLayer_df[SuperLayer_df['layer'] == j]
                 if sec == 7:
                     max_phi_layer = j_layer_df[j_layer_df['phi'] < 0]['phi'].max()
                     diff = abs(abs(max_phi_layer) - min_phi_layer)
@@ -71,18 +71,20 @@ class Ch_phi_acc:
         return phi1, phi2
 
     def _chamber_phi_acceptance_1(self, wh, sec, st, sl=1):
-        Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
-        if Slayer_df.empty:
+        SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
+        if SuperLayer_df.empty:
             if (self.verbosity):
                 print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
             return None, None
 
         i = 1
         j = 1
-        i_layer_df = Slayer_df[Slayer_df['layer'] == i]
-        j_layer_df = Slayer_df[Slayer_df['layer'] == j]
+        i_layer_df = SuperLayer_df[SuperLayer_df['layer'] == i]
+        j_layer_df = SuperLayer_df[SuperLayer_df['layer'] == j]
+        pos_phi = i_layer_df[i_layer_df['phi'] > 0]['phi']
+        neg_phi = j_layer_df[j_layer_df['phi'] < 0]['phi']
         if sec == 7:
-            min_phi_layer, max_phi_layer = i_layer_df[i_layer_df['phi'] > 0]['phi'].min(), j_layer_df[j_layer_df['phi'] < 0]['phi'].max()
+            min_phi_layer, max_phi_layer = pos_phi.min(), neg_phi.max()
         else:
             min_phi_layer, max_phi_layer = i_layer_df['phi'].min(), j_layer_df['phi'].max()
         phi1 = min_phi_layer
@@ -104,7 +106,7 @@ class Ch_phi_acc:
                         print(f"Computing phi acceptance for Wheel: {wh}, Sector: {sec}, Station: {st}")
                     if acc:
                         # if kind == 0:
-                        phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_0(wh, sec, st)
+                        phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_1(wh, sec, st)
                         # elif kind == 1:
                         #     phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_1(wh, sec, st)
                         acceptances[wh + 2, sec - 1, st - 1] = [phi1_st_acc, phi2_st_acc]
