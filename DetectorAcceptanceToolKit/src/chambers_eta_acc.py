@@ -45,7 +45,7 @@ class Ch_eta_acc:
         eta1, eta2 = -1 * np.log(np.tan(np.arctan2(global_r_eta1, shifted_z_eta1) / 2)), -1 * np.log(np.tan(np.arctan2(global_r_eta2, shifted_z_eta2) / 2))
         return eta1, eta2
 
-    def _chambers_eta_acceptance(self, wh, sec, st, sl=1):
+    def _chamber_eta_acceptance_0(self, wh, sec, st, sl=1):
         Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
         if Slayer_df.empty:
             if (self.verbosity):
@@ -69,32 +69,43 @@ class Ch_eta_acc:
                     eta2 = j_eta2_layer
         return eta1, eta2
 
-        # lower_layer_df = Slayer_df[(Slayer_df['global_y'] == Slayer_df['global_y'].min())]
-        # upper_layer_df = Slayer_df[(Slayer_df['global_y'] == Slayer_df['global_y'].max())]
-        # lower_layer_df = lower_layer_df[lower_layer_df['wire'] == lower_layer_df['wire'].min()]
-        # upper_layer_df = upper_layer_df[upper_layer_df['wire'] == upper_layer_df['wire'].min()]
+    def _chamber_eta_acceptance_1(self, wh, sec, st, sl=1):
+        Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
+        if Slayer_df.empty:
+            if (self.verbosity):
+                print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
+            return None, None
+        num_layers = int(Slayer_df['layer'].max())
+        min_diff = 1000
+        layer = 3
+        layer_df = Slayer_df[Slayer_df['layer'] == layer]
+        eta1 = self._get_layer_eta1_eta2(layer_df)[0]
+        eta2 = self._get_layer_eta1_eta2(layer_df)[1]
+        return eta1, eta2
+    
+    def _chamber_eta_acceptance_SL2(self, wh, sec, st, sl=2):
+        Slayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
+        if Slayer_df.empty:
+            if (self.verbosity):
+                print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
+            return None, None
 
-        # lower_z = lower_layer_df['global_z'].values[0]
-        # lower_y = lower_layer_df['global_y'].values[0]
-        # shift_lower = lower_layer_df['length'].values[0] / 2
-        # upper_z = upper_layer_df['global_z'].values[0]
-        # upper_y = upper_layer_df['global_y'].values[0]
-        # shift_upper = upper_layer_df['length'].values[0] / 2
-
-        # if lower_z < 0: shift_lower *= -1
-        # shifted_lower_z = lower_z - shift_lower
-        # shifted_lower_r = (lower_y**2 + shifted_lower_z**2)**0.5
-
-        # if upper_z < 0: shift_upper *= -1
-        # shifted_upper_z = upper_z + shift_upper
-        # shifted_upper_r = (upper_y**2 + shifted_upper_z**2)**0.5
-
-        # if shifted_lower_r == 0 or shifted_upper_r == 0:
-        #     print(f"Invalid radius for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
-        #     return None, None
-        # eta1, eta2 = -np.log(np.tan(np.arccos(shifted_lower_z / shifted_lower_r) / 2)), -np.log(np.tan(np.arccos(shifted_upper_z / shifted_upper_r) / 2))
-        # if upper_z < 0: eta1, eta2 = eta2, eta1
-        # return eta1, eta2
+        num_layers = int(Slayer_df['layer'].max())
+        min_diff = 1000
+        eta1 = -5
+        eta2 = 5
+        for i in range(1, num_layers + 1):
+            i_layer_df = Slayer_df[Slayer_df['layer'] == i]
+            min_eta_layer = i_layer_df['eta'].min()
+            for j in range(1, num_layers + 1):
+                j_layer_df = Slayer_df[Slayer_df['layer'] == j]
+                max_eta_layer = j_layer_df['eta'].max()
+                diff = abs(max_eta_layer - min_eta_layer)
+                if diff < min_diff:
+                    min_diff = diff
+                    eta1 = min_eta_layer
+                    eta2 = max_eta_layer
+        return eta1, eta2
 
     def compute_eta_acceptance(self):
         acceptances = np.full((self.max_wh * 2 + 1, self.max_sec, self.max_st, 2), None, dtype=object)
@@ -104,7 +115,7 @@ class Ch_eta_acc:
                 for st in range(self.min_st, self.max_st + 1):
                     if (self.verbosity):
                         print(f"Computing eta acceptance for Wheel: {wh}, Sector: {sec}, Station: {st}")
-                    eta1_st_acc, eta2_st_acc =  self._chambers_eta_acceptance(wh, sec, st)
+                    eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_1(wh, sec, st)
                     acceptances[wh + 2, sec - 1, st - 1] = [eta1_st_acc, eta2_st_acc]
         return acceptances
     

@@ -40,12 +40,12 @@ class Ch_phi_eta_acc:
                 eta2 = self.eta_acceptances[wh + 2, sec - 1, st - 1, 1]
                 phi1 = self.phi_acceptances[wh + 2, sec - 1, st - 1, 0]
                 phi2 = self.phi_acceptances[wh + 2, sec - 1, st - 1, 1]
-                if self.verbosity and st == 4:
-                    print(f"Plotting acceptance for wheel {wh}, sector {sec} and station MB{st}:")
-                    print(f"Eta range:")
-                    print(eta1, eta2)
-                    print(f"Phi range:")
-                    print(phi1, phi2)
+                # if self.verbosity and st == 4:
+                #     print(f"Plotting acceptance for wheel {wh}, sector {sec} and station MB{st}:")
+                #     print(f"Eta range:")
+                #     print(eta1, eta2)
+                #     print(f"Phi range:")
+                #     print(phi1, phi2)
                 if eta1 == None or eta2 == None or phi1 == None or phi2 == None: continue
                 
                 if eta1 < -1.2:
@@ -58,7 +58,7 @@ class Ch_phi_eta_acc:
                 else:
                     ax.fill_between([phi1, phi2], y1=eta1, y2=eta2, color="limegreen")
         ax.set_xlim(-3.2, 3.2)
-        ax.set_ylim(-1.2, 1.2)
+        ax.set_ylim(-1.4, 1.4)
         ax.grid(True, which='major', linestyle=':', linewidth=0.4, color='k')
         ax.minorticks_on()
         ax.grid(True, which='minor', linestyle=':', linewidth=0.4, color='k')
