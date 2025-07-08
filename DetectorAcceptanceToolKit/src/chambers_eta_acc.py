@@ -119,7 +119,7 @@ class Ch_eta_acc:
         j_layer_df = SuperLayer_df[SuperLayer_df['layer'] == j]
         return i_layer_df['eta'].min(), j_layer_df['eta'].max()
 
-    def compute_eta_acceptance(self):
+    def compute_eta_acceptance(self, method="SL2_1"):
         acceptances = np.full((self.max_wh * 2 + 1, self.max_sec, self.max_st, 2), None, dtype=object)
 
         for wh in range(self.min_wh, self.max_wh + 1):
@@ -127,7 +127,14 @@ class Ch_eta_acc:
                 for st in range(self.min_st, self.max_st + 1):
                     if (self.verbosity):
                         print(f"Computing eta acceptance for Wheel: {wh}, Sector: {sec}, Station: {st}")
-                    eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_1(wh, sec, st)
+                    if method == "0":
+                        eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_0(wh, sec, st)
+                    elif method == "1":
+                        eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_1(wh, sec, st)
+                    elif method == "SL2_0":
+                        eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_SL2_0(wh, sec, st)
+                    elif method == "SL2_1":
+                        eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_SL2_1(wh, sec, st)
                     acceptances[wh + 2, sec - 1, st - 1] = [eta1_st_acc, eta2_st_acc]
         self.acceptances = acceptances
         return acceptances

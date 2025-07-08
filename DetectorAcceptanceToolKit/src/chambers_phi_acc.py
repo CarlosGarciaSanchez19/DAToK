@@ -76,7 +76,6 @@ class Ch_phi_acc:
             if (self.verbosity):
                 print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
             return None, None
-
         i = 1
         j = 1
         i_layer_df = SuperLayer_df[SuperLayer_df['layer'] == i]
@@ -91,7 +90,7 @@ class Ch_phi_acc:
         phi2 = max_phi_layer
         return phi1, phi2
 
-    def compute_phi_acceptance(self, acc=True, rang=False):
+    def compute_phi_acceptance(self, method="1", acc=True, rang=False):
         if not acc and not rang:
             print("Computing nothing...")
             print("Try to set one of the arguments (acc or rang) to True.")
@@ -105,10 +104,10 @@ class Ch_phi_acc:
                     if (self.verbosity):
                         print(f"Computing phi acceptance for Wheel: {wh}, Sector: {sec}, Station: {st}")
                     if acc:
-                        # if kind == 0:
-                        phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_1(wh, sec, st)
-                        # elif kind == 1:
-                        #     phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_1(wh, sec, st)
+                        if method == "0":
+                            phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_0(wh, sec, st)
+                        elif method == "1":
+                            phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_1(wh, sec, st)
                         acceptances[wh + 2, sec - 1, st - 1] = [phi1_st_acc, phi2_st_acc]
                     if rang:
                         phi1_st_rang, phi2_st_rang =  self._chamber_phi_range(wh, sec, st)

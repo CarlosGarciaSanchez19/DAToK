@@ -9,13 +9,20 @@ from src.chambers_phi_acc import Ch_phi_acc
 hep.style.use("CMS")
 
 class Ch_phi_eta_acc:
-    def __init__(self, verbosity=False, eta_acc_file="", phi_acc_file=""):
+    def __init__(self, verbosity=False, eta_method="SL2_1", phi_method="1", eta_acc_file="", phi_acc_file=""):
 
         if eta_acc_file != "" or phi_acc_file != "":
             if not eta_acc_file.endswith(".npy") or not phi_acc_file.endswith(".npy"):
                 raise ValueError("eta_acc_file and phi_acc_file must have the right format (.npy)")
+        if eta_method not in ["0", "1", "SL2_0", "SL2_1"]:
+            raise ValueError("Choose a method to compute eta within these four: '0', '1', 'SL2_0', 'SL2_1'")
+        if phi_method not in ["0", "1"]:
+            raise ValueError("Choose a method to compute phi within these two: '0', '1'")
 
         self.verbosity = verbosity
+        
+        self.eta_method = eta_method
+        self.phi_method = phi_method
 
         self.cea = Ch_eta_acc(verbosity=verbosity)
         self.cpa = Ch_phi_acc(verbosity=verbosity)
@@ -30,18 +37,26 @@ class Ch_phi_eta_acc:
         self.max_st = self.cpa.max_st
 
         if eta_acc_file == "":
-            self.eta_acceptances = self.cea.compute_eta_acceptance()
+            self.eta_acceptances = self.cea.compute_eta_acceptance(method=eta_method)
         else:
             self.eta_acceptances = np.load("files/output/" + eta_acc_file, allow_pickle=True)
         if phi_acc_file == "":
-            self.phi_acceptances = self.cpa.compute_phi_acceptance()[0]
+            self.phi_acceptances = self.cpa.compute_phi_acceptance(method=phi_method)[0]
         else:
             self.phi_acceptances = np.load("files/output/" + phi_acc_file, allow_pickle=True)
+        
+        if "SL2" in eta_method:
+            min_st = self.cea.min_st
+            self.cea.min_st = 4
+            self.cea.verbosity = False
+            self.eta_acceptances[:, :, 3, :] = self.cea.compute_eta_acceptance(method="1")[:, :, 3, :]
+            self.cea.verbosity = verbosity
+            self.cea.min_st = min_st
     
-    def save_eta_acceptances_to_txt(self, sec=1):
+    def save_eta_acceptances_to_txt_format(self, sec=1):
         self.cea.save_acceptances_to_txt(sec=sec)
 
-    def save_phi_acceptances_to_txt(self, wh=0):
+    def save_phi_acceptances_to_txt_format(self, wh=0):
         self.cpa.save_acceptances_to_txt(wh=wh)
     
     def save_eta_acceptances_as_np_obj(self):
@@ -50,6 +65,43 @@ class Ch_phi_eta_acc:
     def save_phi_acceptances_as_np_obj(self):
         self.cpa.save_acceptances_as_np_obj()
     
+    def _write_map(self, h, st, var, eta_phi_map):
+        name = "MB" + str(st) + "_" + var
+        for wh in range(self.min_wh, self.max_wh + 1):
+            max_sec = sum(np.array([x is not None for x in eta_phi_map[wh + 2, :]]))
+            for sec in range(self.min_sec, max_sec + 1):
+                value = eta_phi_map[wh + 2, sec - 1]
+                if wh < 0:
+                    wh_label = "Neg" + str(abs(wh))
+                else:
+                    wh_label = str(wh)
+                if wh == self.min_wh and sec == self.min_sec:
+                    h.write("std::map<string, float> " + name + " = { \n{wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "}")
+                elif wh == self.max_wh and sec == max_sec:
+                    h.write(", {wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "} \n};\n\n")
+                elif sec == max_sec:
+                    h.write(", {wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "},\n")
+                elif sec == self.min_sec:
+                    h.write("{wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "}")
+                else:
+                    h.write(", {wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "}")
+
+    def save_eta_phi_acceptances_as_Clibrary(self):
+        with open("DTAcceptances.h", 'w') as h:
+            h .write("#ifndef DTACCEPTANCES_H\n")
+            h.write("# define DTACCEPTANCES_H\n\n")
+            for st in range(self.min_st, self.max_st + 1):
+                phi1 = self.phi_acceptances[:, :, st - 1, 0]
+                phi2 = self.phi_acceptances[:, :, st - 1, 1]
+                eta1 = self.eta_acceptances[:, :, st - 1, 0]
+                eta2 = self.eta_acceptances[:, :, st - 1, 1]
+                self._write_map(h, st, "phi1", phi1)
+                self._write_map(h, st, "phi2", phi2)
+                self._write_map(h, st, "eta1", eta1)
+                self._write_map(h, st, "eta2", eta2)
+            h.write("#endif\n")
+            h.close()
+
     def plot2D_map(self, st=1):
         fig, ax = plt.subplots()
         for wh in range(self.min_wh, self.max_wh + 1):

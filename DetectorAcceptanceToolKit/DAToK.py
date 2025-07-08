@@ -13,7 +13,9 @@ parser = argparse.ArgumentParser(description="Detector Acceptance Tool Kit")
 parser.add_argument("-v", "--verbose", action="count", default=0,
                     help="Sets the verbosity. Without it only saving messages are shown. If included, extra information is shown.")
 parser.add_argument("-p", "--plot", action="store_true",
-                    help="If included, maps are created. If not, acceptances are computed and saved as .npy files.")
+                    help="If included, maps plots are created. If not, acceptances are computed and saved as .npy files.")
+parser.add_argument("-s", "--save", action="store_true",
+                    help="If included, maps are computed and saved as C++ maps in a C libray. If not, acceptances are computed and saved as .npy files.")
 
 args = parser.parse_args()
 
@@ -21,10 +23,14 @@ if args.plot:
     cpea = Ch_phi_eta_acc(args.verbose, eta_acc_file="eta_acceptances.npy", phi_acc_file="phi_acceptances.npy")
     for st in range(cpea.min_st, cpea.max_st + 1):
         cpea.plot2D_map(st=st)
-else:
+elif not args.save:
     cpea = Ch_phi_eta_acc(args.verbose)
     cpea.save_eta_acceptances_as_np_obj()
     cpea.save_phi_acceptances_as_np_obj()
+
+if args.save:
+    cpea = Ch_phi_eta_acc(args.verbose)
+    cpea.save_eta_phi_acceptances_as_Clibrary()
 
 # cpea.save_eta_acceptances_to_txt()
 # cpea.save_phi_acceptances_to_txt()
