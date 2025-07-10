@@ -16,20 +16,25 @@ parser.add_argument("-p", "--plot", action="store_true",
                     help="If included, maps plots are created. If not, acceptances are computed and saved as .npy files.")
 parser.add_argument("-s", "--save", action="store_true",
                     help="If included, maps are computed and saved as C++ maps in a C libray. If not, acceptances are computed and saved as .npy files.")
+parser.add_argument("--eta_method",
+                    help="If included, eta acceptance in (phi, eta) maps is computed with the inputed method. Valid values are: '0', '1', 'SL2_0', 'SL2_1'")
+parser.add_argument("--phi_method",
+                    help="If included, phi acceptance in (phi, eta) maps is computed with the inputed method. Valid values are: '0', '1'")
 
 args = parser.parse_args()
 
+
 if args.plot:
-    cpea = Ch_phi_eta_acc(args.verbose, eta_acc_file="eta_acceptances.npy", phi_acc_file="phi_acceptances.npy")
+    cpea = Ch_phi_eta_acc(args.verbose, eta_method=args.eta_method, phi_method=args.phi_method)
     for st in range(cpea.min_st, cpea.max_st + 1):
         cpea.plot2D_map(st=st)
 elif not args.save:
-    cpea = Ch_phi_eta_acc(args.verbose)
+    cpea = Ch_phi_eta_acc(args.verbose, eta_method=args.eta_method, phi_method=args.phi_method)
     cpea.save_eta_acceptances_as_np_obj()
     cpea.save_phi_acceptances_as_np_obj()
 
 if args.save:
-    cpea = Ch_phi_eta_acc(args.verbose)
+    cpea = Ch_phi_eta_acc(args.verbose, eta_method=args.eta_method, phi_method=args.phi_method)
     cpea.save_eta_phi_acceptances_as_Clibrary()
 
 # cpea.save_eta_acceptances_to_txt()

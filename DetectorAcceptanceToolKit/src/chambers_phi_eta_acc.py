@@ -14,13 +14,20 @@ class Ch_phi_eta_acc:
         if eta_acc_file != "" or phi_acc_file != "":
             if not eta_acc_file.endswith(".npy") or not phi_acc_file.endswith(".npy"):
                 raise ValueError("eta_acc_file and phi_acc_file must have the right format (.npy)")
-        if eta_method not in ["0", "1", "SL2_0", "SL2_1"]:
+        if eta_method not in ["0", "1", "SL2_0", "SL2_1", None]:
             raise ValueError("Choose a method to compute eta within these four: '0', '1', 'SL2_0', 'SL2_1'")
-        if phi_method not in ["0", "1"]:
+        if phi_method not in ["0", "1", None]:
             raise ValueError("Choose a method to compute phi within these two: '0', '1'")
 
         self.verbosity = verbosity
         
+        if eta_method == None:
+            eta_method = "SL2_1"
+        if phi_method == None:
+            phi_method = "1"
+        print("COMPUTING ACCEPTANCES WITH:")
+        print("eta_ethod: " + eta_method)
+        print("phi_ethod: " + phi_method)
         self.eta_method = eta_method
         self.phi_method = phi_method
 
@@ -46,6 +53,8 @@ class Ch_phi_eta_acc:
             self.phi_acceptances = np.load("files/output/" + phi_acc_file, allow_pickle=True)
         
         if "SL2" in eta_method:
+            print("\nNOTE: eta acceptances in MB4 are computed with eta_method='1' because there's no SL2 in MB4.\n")
+            time.sleep(1)
             min_st = self.cea.min_st
             self.cea.min_st = 4
             self.cea.verbosity = False
@@ -76,19 +85,24 @@ class Ch_phi_eta_acc:
                 else:
                     wh_label = str(wh)
                 if wh == self.min_wh and sec == self.min_sec:
-                    h.write("std::map<string, float> " + name + " = { \n{wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "}")
+                    h.write('std::map<string, float> ' + name + ' = { \n{"wh' + wh_label + '_sec' + str(sec) + '", ' + str(value) + '}')
                 elif wh == self.max_wh and sec == max_sec:
-                    h.write(", {wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "} \n};\n\n")
+                    h.write(', {"wh' + wh_label + '_sec' + str(sec) + '", ' + str(value) + '} \n};\n\n')
                 elif sec == max_sec:
-                    h.write(", {wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "},\n")
+                    h.write(', {"wh' + wh_label + '_sec' + str(sec) + '", ' + str(value) + '},\n')
                 elif sec == self.min_sec:
-                    h.write("{wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "}")
+                    h.write('{"wh' + wh_label + '_sec' + str(sec) + '", ' + str(value) + '}')
                 else:
-                    h.write(", {wh" + wh_label + "_sec" + str(sec) + ", " + str(value) + "}")
+                    h.write(', {"wh' + wh_label + '_sec' + str(sec) + '", ' + str(value) + '}')
 
     def save_eta_phi_acceptances_as_Clibrary(self):
+        print("Saving acceptances into DTAcceptances.h")
         with open("DTAcceptances.h", 'w') as h:
-            h .write("#ifndef DTACCEPTANCES_H\n")
+            h.write("// eta_method: " + self.eta_method)
+            if "SL2" in self.eta_method:
+                h.write("// eta_method for MB4: 1")
+            h.write("// phi_method: " + self.eta_method)
+            h.write("\n#ifndef DTACCEPTANCES_H\n")
             h.write("# define DTACCEPTANCES_H\n\n")
             for st in range(self.min_st, self.max_st + 1):
                 phi1 = self.phi_acceptances[:, :, st - 1, 0]
@@ -134,7 +148,7 @@ class Ch_phi_eta_acc:
         ax.set_ylim(-1.4, 1.4)
         ax.text(
             0.01, 1.05,
-            "Private work (CMS LUT information)",
+            "DT acceptance",
             fontsize=fontsize,
             verticalalignment='top',
             fontproperties="Tex Gyre Heros:italic",
