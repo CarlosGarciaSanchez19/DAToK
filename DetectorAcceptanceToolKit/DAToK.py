@@ -17,12 +17,11 @@ parser.add_argument("-p", "--plot", action="store_true",
 parser.add_argument("-s", "--save", action="store_true",
                     help="If included, maps are computed and saved as C++ maps in a C libray. If not, acceptances are computed and saved as .npy files.")
 parser.add_argument("--eta_method",
-                    help="If included, eta acceptance in (phi, eta) maps is computed with the inputed method. Valid values are: '0', '1', 'SL2_0', 'SL2_1'")
+                    help="If included, eta acceptance in (phi, eta) maps is computed with the inputed method. Valid values are: 'SL2_0', 'SL2_L1', 'SL1_0', 'SL1_L2'. The default is 'SL2_L1'.")
 parser.add_argument("--phi_method",
-                    help="If included, phi acceptance in (phi, eta) maps is computed with the inputed method. Valid values are: '0', '1'")
+                    help="If included, phi acceptance in (phi, eta) maps is computed with the inputed method. Valid values are: 'SL1_0', 'SL1_L1'. The default is 'SL1_L1'.")
 
 args = parser.parse_args()
-
 
 if args.plot:
     cpea = Ch_phi_eta_acc(args.verbose, eta_method=args.eta_method, phi_method=args.phi_method)

@@ -8,26 +8,30 @@ from src.chambers_phi_acc import Ch_phi_acc
 
 hep.style.use("CMS")
 
+eta_methods = ["SL2_0", "SL2_L1", "SL1_0", "SL1_L2"]
+phi_methods = ["SL1_0", "SL1_L1"]
+
 class Ch_phi_eta_acc:
-    def __init__(self, verbosity=False, eta_method="SL2_1", phi_method="1", eta_acc_file="", phi_acc_file=""):
+
+    def __init__(self, verbosity=False, eta_method=eta_methods[1], phi_method=phi_methods[1], eta_acc_file="", phi_acc_file=""):
 
         if eta_acc_file != "" or phi_acc_file != "":
             if not eta_acc_file.endswith(".npy") or not phi_acc_file.endswith(".npy"):
                 raise ValueError("eta_acc_file and phi_acc_file must have the right format (.npy)")
-        if eta_method not in ["0", "1", "SL2_0", "SL2_1", None]:
-            raise ValueError("Choose a method to compute eta within these four: '0', '1', 'SL2_0', 'SL2_1'")
-        if phi_method not in ["0", "1", None]:
-            raise ValueError("Choose a method to compute phi within these two: '0', '1'")
+        if eta_method not in ["SL2_0", "SL2_L1", "SL1_0", "SL1_L2", None]:
+            raise ValueError("Choose a method to compute eta within these four: " + str(eta_methods))
+        if phi_method not in ["SL1_0", "SL1_L1", None]:
+            raise ValueError("Choose a method to compute phi within these two: " + str(phi_methods))
 
         self.verbosity = verbosity
         
         if eta_method == None:
-            eta_method = "SL2_1"
+            eta_method = eta_methods[1]
         if phi_method == None:
-            phi_method = "1"
+            phi_method = phi_methods[1]
         print("COMPUTING ACCEPTANCES WITH:")
-        print("eta_ethod: " + eta_method)
-        print("phi_ethod: " + phi_method)
+        print("eta_method: " + eta_method)
+        print("phi_method: " + phi_method)
         self.eta_method = eta_method
         self.phi_method = phi_method
 
@@ -53,14 +57,24 @@ class Ch_phi_eta_acc:
             self.phi_acceptances = np.load("files/output/" + phi_acc_file, allow_pickle=True)
         
         if "SL2" in eta_method:
-            print("\nNOTE: eta acceptances in MB4 are computed with eta_method='1' because there's no SL2 in MB4.\n")
+            print("\nNOTE: eta acceptances in MB4 are computed with eta_method='SL1_L2' because there's no SL2 in MB4.\n")
             time.sleep(1)
             min_st = self.cea.min_st
             self.cea.min_st = 4
             self.cea.verbosity = False
-            self.eta_acceptances[:, :, 3, :] = self.cea.compute_eta_acceptance(method="1")[:, :, 3, :]
+            self.eta_acceptances[:, :, 3, :] = self.cea.compute_eta_acceptance(method="SL1_L2")[:, :, 3, :]
             self.cea.verbosity = verbosity
             self.cea.min_st = min_st
+        
+        if phi_method == "SL1_L1":
+            print("\nNOTE: phi acceptances in MB4 are computed using 3rd and 3rd-last wires.\n")
+            time.sleep(1)
+            min_st = self.cpa.min_st
+            self.cpa.min_st = 4
+            self.cpa.verbosity = False
+            self.phi_acceptances[:, :, 3, :] = self.cpa.compute_phi_acceptance(method="SL1_L1", ith=2)[0][:, :, 3, :]
+            self.cpa.verbosity = verbosity
+            self.cpa.min_st = min_st
     
     def save_eta_acceptances_to_txt_format(self, sec=1):
         self.cea.save_acceptances_to_txt(sec=sec)
@@ -100,8 +114,8 @@ class Ch_phi_eta_acc:
         with open("DTAcceptances.h", 'w') as h:
             h.write("// eta_method: " + self.eta_method)
             if "SL2" in self.eta_method:
-                h.write("// eta_method for MB4: 1")
-            h.write("// phi_method: " + self.eta_method)
+                h.write("// eta_method for MB4: " + eta_methods[3])
+            h.write("// phi_method: " + self.phi_method)
             h.write("\n#ifndef DTACCEPTANCES_H\n")
             h.write("# define DTACCEPTANCES_H\n\n")
             for st in range(self.min_st, self.max_st + 1):

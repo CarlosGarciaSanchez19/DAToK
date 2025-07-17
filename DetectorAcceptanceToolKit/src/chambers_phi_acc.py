@@ -4,6 +4,8 @@ import time
 import matplotlib.pyplot as plt
 from itertools import zip_longest
 
+phi_methods = ["SL1_0", "SL1_L1"]
+
 class Ch_phi_acc:
 
     def __init__(self, verbosity=False):
@@ -38,7 +40,7 @@ class Ch_phi_acc:
             phi1, phi2 = SuperLayer_df['phi'].min(), SuperLayer_df['phi'].max()
         return phi1, phi2
     
-    def _chamber_phi_acceptance_0(self, wh, sec, st, sl=1):
+    def _chamber_phi_acceptance_SL1_0(self, wh, sec, st, sl=1):
         SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
         if SuperLayer_df.empty:
             if (self.verbosity):
@@ -69,32 +71,66 @@ class Ch_phi_acc:
                     phi1 = min_phi_layer
                     phi2 = max_phi_layer
         return phi1, phi2
+    
+    # def _chamber_phi_acceptance_SL1_0(self, wh, sec, st, sl=1):
+    #     SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
+    #     if SuperLayer_df.empty:
+    #         if (self.verbosity):
+    #             print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
+    #         return None, None
 
-    def _chamber_phi_acceptance_1(self, wh, sec, st, sl=1):
+    #     num_layers = int(SuperLayer_df['layer'].max())
+    #     min_diff = 1000
+    #     phi1 = -5
+    #     phi2 = 5
+    #     for i in range(1, num_layers + 1):
+    #         i_layer_df = SuperLayer_df[SuperLayer_df['layer'] == i]
+    #         sorted_layer = i_layer_df.sort_values(by='phi')['phi']
+    #         if sec == 7:
+    #             snd_phi_layer = sorted_layer[sorted_layer > 0].iloc[1]
+    #         else:
+    #             snd_phi_layer = sorted_layer.iloc[1]
+
+    #         for j in range(1, num_layers + 1):
+    #             j_layer_df = SuperLayer_df[SuperLayer_df['layer'] == j]
+    #             sorted_layer = j_layer_df.sort_values(by='phi')['phi']
+    #             if sec == 7:
+    #                 sndLast_phi_layer = sorted_layer[sorted_layer < 0].iloc[-2]
+    #                 diff = abs(abs(sndLast_phi_layer) - snd_phi_layer)
+    #             else:
+    #                 sndLast_phi_layer = sorted_layer.iloc[-2]
+    #                 diff = abs(sndLast_phi_layer - snd_phi_layer)
+    #             if diff < min_diff:
+    #                 min_diff = diff
+    #                 phi1 = snd_phi_layer
+    #                 phi2 = sndLast_phi_layer
+    #     return phi1, phi2
+
+    def _chamber_phi_acceptance_SL1_L1(self, wh, sec, st, sl=1, ith=4):
         SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
         if SuperLayer_df.empty:
             if (self.verbosity):
                 print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: {sl}")
             return None, None
         i = 1
-        j = 1
-        i_layer_df = SuperLayer_df[SuperLayer_df['layer'] == i]
-        j_layer_df = SuperLayer_df[SuperLayer_df['layer'] == j]
-        pos_phi = i_layer_df[i_layer_df['phi'] > 0]['phi']
-        neg_phi = j_layer_df[j_layer_df['phi'] < 0]['phi']
+        L1_df = SuperLayer_df[SuperLayer_df['layer'] == i]
+        sorted_layer = L1_df.sort_values(by='phi')['phi']
+        phi1 = sorted_layer.iloc[ith]
+        phi2 = sorted_layer.iloc[-ith - 1]
         if sec == 7:
-            min_phi_layer, max_phi_layer = pos_phi.min(), neg_phi.max()
-        else:
-            min_phi_layer, max_phi_layer = i_layer_df['phi'].min(), j_layer_df['phi'].max()
-        phi1 = min_phi_layer
-        phi2 = max_phi_layer
+            pos_phi = sorted_layer[sorted_layer > 0]
+            neg_phi = sorted_layer[sorted_layer < 0]
+            phi1 = pos_phi.iloc[ith]
+            phi2 = neg_phi.iloc[-ith - 1]
         return phi1, phi2
 
-    def compute_phi_acceptance(self, method="1", acc=True, rang=False):
+    def compute_phi_acceptance(self, method="SL1_L1", acc=True, rang=False, ith=4):
         if not acc and not rang:
             print("Computing nothing...")
             print("Try to set one of the arguments (acc or rang) to True.")
             return np.array((None)), np.array((None))
+        if method not in phi_methods:
+            raise ValueError("Choose a method to compute phi within these two: " + str(phi_methods))
 
         acceptances = np.full((self.max_wh * 2 + 1, self.max_sec, self.max_st, 2), None, dtype=object)
         ranges = np.full((self.max_wh * 2 + 1, self.max_sec, self.max_st, 2), None, dtype=object)
@@ -104,10 +140,10 @@ class Ch_phi_acc:
                     if (self.verbosity):
                         print(f"Computing phi acceptance for Wheel: {wh}, Sector: {sec}, Station: {st}")
                     if acc:
-                        if method == "0":
-                            phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_0(wh, sec, st)
-                        elif method == "1":
-                            phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_1(wh, sec, st)
+                        if method == phi_methods[0]:
+                            phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_SL1_0(wh, sec, st)
+                        elif method == phi_methods[1]:
+                            phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_SL1_L1(wh, sec, st, ith=ith)
                         acceptances[wh + 2, sec - 1, st - 1] = [phi1_st_acc, phi2_st_acc]
                     if rang:
                         phi1_st_rang, phi2_st_rang =  self._chamber_phi_range(wh, sec, st)
