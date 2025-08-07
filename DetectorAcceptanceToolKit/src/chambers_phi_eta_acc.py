@@ -56,6 +56,15 @@ class Ch_phi_eta_acc:
         else:
             self.phi_acceptances = np.load("files/output/" + phi_acc_file, allow_pickle=True)
         
+        ith_phi = self.cpa.ith
+        ith_eta = self.cea.ith
+
+        a = self._sufix(ith_phi)
+        print("\nNOTE: phi acceptances in MB1-MB4 are computed using " + str(ith_phi + 1) + a + " and " + str(ith_phi + 1) + a + "-last wires.\n")
+
+        b = self._sufix(ith_eta)
+        print("NOTE: eta acceptances in MB1-MB3 are computed using " + str(ith_eta + 1) + b + " and " + str(ith_eta + 1) + b + "-last wires.\n")
+
         if "SL2" in eta_method:
             print("\nNOTE: eta acceptances in MB4 are computed with eta_method='SL1_L2' because there's no SL2 in MB4.\n")
             time.sleep(1)
@@ -66,16 +75,28 @@ class Ch_phi_eta_acc:
             self.cea.verbosity = verbosity
             self.cea.min_st = min_st
         
-        if phi_method == "SL1_L1":
-            print("\nNOTE: phi acceptances in MB4 are computed using 3rd and 3rd-last wires.\n")
-            time.sleep(1)
-            min_st = self.cpa.min_st
-            self.cpa.min_st = 4
-            self.cpa.verbosity = False
-            self.phi_acceptances[:, :, 3, :] = self.cpa.compute_phi_acceptance(method="SL1_L1", ith=2)[0][:, :, 3, :]
-            self.cpa.verbosity = verbosity
-            self.cpa.min_st = min_st
+        # if phi_method == "SL1_L1":
+        #     min_st = self.cpa.min_st
+        #     self.cpa.ith = 1
+        #     self.cpa.min_st = 4
+        #     self.cpa.verbosity = False
+        #     b = self._sufix(self.cpa.ith)
+        #     print("\nNOTE: phi acceptances in MB4 are computed using " + str(self.cpa.ith + 1) + b + " and " + str(self.cpa.ith + 1) + b + "-last wires.\n")
+        #     self.phi_acceptances[:, :, 3, :] = self.cpa.compute_phi_acceptance(method="SL1_L1")[0][:, :, 3, :]
+        #     self.cpa.verbosity = verbosity
+        #     self.cpa.min_st = min_st
+        #     self.cpa.ith = ith_phi
     
+    def _sufix(self, st):
+        if st == 0:
+            return "st"
+        elif st == 1:
+            return "nd"
+        elif st == 2:
+            return "rd"
+        else:
+            return "th"
+
     def save_eta_acceptances_to_txt_format(self, sec=1):
         self.cea.save_acceptances_to_txt(sec=sec)
 
@@ -112,7 +133,7 @@ class Ch_phi_eta_acc:
     def save_eta_phi_acceptances_as_Clibrary(self):
         print("Saving acceptances into DTAcceptances.h")
         with open("DTAcceptances.h", 'w') as h:
-            h.write("// eta_method: " + self.eta_method)
+            h.write("// eta_method for MB1-MB3: " + self.eta_method)
             if "SL2" in self.eta_method:
                 h.write("// eta_method for MB4: " + eta_methods[3])
             h.write("// phi_method: " + self.phi_method)

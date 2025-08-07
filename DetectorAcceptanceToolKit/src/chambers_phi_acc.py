@@ -24,6 +24,8 @@ class Ch_phi_acc:
         self.acceptances = None
         self.ranges = None
 
+        self.ith = 2  # Default value for ith, can be changed later
+
     def _chamber_phi_range(self, wh, sec, st, sl=1):
         SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
         if SuperLayer_df.empty:
@@ -106,7 +108,7 @@ class Ch_phi_acc:
     #                 phi2 = sndLast_phi_layer
     #     return phi1, phi2
 
-    def _chamber_phi_acceptance_SL1_L1(self, wh, sec, st, sl=1, ith=4):
+    def _chamber_phi_acceptance_SL1_L1(self, wh, sec, st, sl=1):
         SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == sl)]
         if SuperLayer_df.empty:
             if (self.verbosity):
@@ -115,16 +117,16 @@ class Ch_phi_acc:
         i = 1
         L1_df = SuperLayer_df[SuperLayer_df['layer'] == i]
         sorted_layer = L1_df.sort_values(by='phi')['phi']
-        phi1 = sorted_layer.iloc[ith]
-        phi2 = sorted_layer.iloc[-ith - 1]
+        phi1 = sorted_layer.iloc[self.ith]
+        phi2 = sorted_layer.iloc[-self.ith - 1]
         if sec == 7:
             pos_phi = sorted_layer[sorted_layer > 0]
             neg_phi = sorted_layer[sorted_layer < 0]
-            phi1 = pos_phi.iloc[ith]
-            phi2 = neg_phi.iloc[-ith - 1]
+            phi1 = pos_phi.iloc[self.ith]
+            phi2 = neg_phi.iloc[-self.ith - 1]
         return phi1, phi2
 
-    def compute_phi_acceptance(self, method="SL1_L1", acc=True, rang=False, ith=4):
+    def compute_phi_acceptance(self, method="SL1_L1", acc=True, rang=False):
         if not acc and not rang:
             print("Computing nothing...")
             print("Try to set one of the arguments (acc or rang) to True.")
@@ -143,7 +145,7 @@ class Ch_phi_acc:
                         if method == phi_methods[0]:
                             phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_SL1_0(wh, sec, st)
                         elif method == phi_methods[1]:
-                            phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_SL1_L1(wh, sec, st, ith=ith)
+                            phi1_st_acc, phi2_st_acc =  self._chamber_phi_acceptance_SL1_L1(wh, sec, st)
                         acceptances[wh + 2, sec - 1, st - 1] = [phi1_st_acc, phi2_st_acc]
                     if rang:
                         phi1_st_rang, phi2_st_rang =  self._chamber_phi_range(wh, sec, st)

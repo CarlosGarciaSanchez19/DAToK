@@ -23,6 +23,8 @@ class Ch_eta_acc:
 
         self.acceptances = None
 
+        self.ith = 3  # Default value for ith, can be changed later
+
     def _get_r_and_z(self, wire_df, eta):
         global_z = wire_df['global_z'].values[0]
         global_x = wire_df['global_x'].values[0]
@@ -81,10 +83,9 @@ class Ch_eta_acc:
         i = 1
         L1_df = SuperLayer_df[SuperLayer_df['layer'] == i]
         # return i_layer_df['eta'].min(), i_layer_df['eta'].max()
-        ith = 1
         sorted_layer = L1_df.sort_values(by='eta')['eta']
-        eta1 = sorted_layer.iloc[ith]
-        eta2 = sorted_layer.iloc[-ith - 1]
+        eta1 = sorted_layer.iloc[self.ith]
+        eta2 = sorted_layer.iloc[-self.ith - 1]
         return eta1, eta2
 
     def _chamber_eta_acceptance_SL1_0(self, wh, sec, st, sl=1):
@@ -123,6 +124,22 @@ class Ch_eta_acc:
         layer_df = SuperLayer_df[SuperLayer_df['layer'] == layer]
         eta1, eta2 = self._get_layer_eta1_eta2(layer_df)
         return eta1, eta2
+    
+    # def _chamber_eta_acceptance_SL1_L1(self, wh, sec, st):
+    #     SuperLayer_df = self.wires_df[(self.wires_df['wheel'] == wh) & (self.wires_df['sector'] == sec) & (self.wires_df['station'] == st) & (self.wires_df['super_layer'] == 1)]
+    #     if SuperLayer_df.empty:
+    #         if (self.verbosity):
+    #             print(f"No data found for Wheel: {wh}, Sector: {sec}, Station: {st}, Super Layer: 1")
+    #         return None, None
+
+    #     i = 1
+    #     L1_df = SuperLayer_df[SuperLayer_df['layer'] == i]
+    #     # return i_layer_df['eta'].min(), i_layer_df['eta'].max()
+    #     ith = 1
+    #     sorted_layer = L1_df.sort_values(by='eta')['eta']
+    #     eta1 = sorted_layer.iloc[ith]
+    #     eta2 = sorted_layer.iloc[-ith - 1]
+    #     return eta1, eta2
 
     def compute_eta_acceptance(self, method="SL2_1"):
         acceptances = np.full((self.max_wh * 2 + 1, self.max_sec, self.max_st, 2), None, dtype=object)
