@@ -104,11 +104,13 @@ class Ch_phi_eta_acc:
         self.cpa.save_acceptances_to_txt(wh=wh)
     
     def save_eta_acceptances_as_np_obj(self):
-        self.cea.save_acceptances_as_np_obj()
-    
+        print("Saving acceptances to files/output/eta_acceptances.npy")
+        np.save("files/output/eta_acceptances.npy", self.eta_acceptances)
+
     def save_phi_acceptances_as_np_obj(self):
-        self.cpa.save_acceptances_as_np_obj()
-    
+        print("Saving acceptances to files/output/phi_acceptances.npy")
+        np.save("files/output/phi_acceptances.npy", self.phi_acceptances)
+
     def _write_map(self, h, st, var, eta_phi_map):
         name = "MB" + str(st) + "_" + var
         for wh in range(self.min_wh, self.max_wh + 1):

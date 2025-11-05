@@ -160,6 +160,11 @@ class Ch_eta_acc:
                         eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_SL1_0(wh, sec, st)
                     elif method == eta_methods[3]:
                         eta1_st_acc, eta2_st_acc =  self._chamber_eta_acceptance_SL1_L2(wh, sec, st)
+                    if st == 4:
+                        if eta1_st_acc is not None and abs(eta1_st_acc) >= 0.75:
+                            eta1_st_acc = 0.75 * np.sign(eta1_st_acc)
+                        if eta2_st_acc is not None and abs(eta2_st_acc) >= 0.75:
+                            eta2_st_acc = 0.75 * np.sign(eta2_st_acc)
                     acceptances[wh + 2, sec - 1, st - 1] = [eta1_st_acc, eta2_st_acc]
         self.acceptances = acceptances
         return acceptances
