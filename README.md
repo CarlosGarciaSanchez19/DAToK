@@ -10,8 +10,7 @@ Clone or download the repository and ensure you have **Python 3.8+** installed.
 You can install the dependencies (if any) with:
 
 ```bash
-git clone git@github.com:CarlosGarciaSanchez19/DAToK.git
-cd DAToK/Files
+cd Files
 pip install -r requirements.txt
 ```
 
